@@ -50,6 +50,7 @@ class M365MessageBuilder:
         return self
 
     def payload(self, payload):
+        self._message.payload = payload
         for byte in payload:
             byte = byte.to_bytes(1, 'big')
             payload_part = int.from_bytes(byte, 'big', signed=True)
@@ -95,15 +96,16 @@ class M365Message:
         WRITE = 0x03
 
     class Attribute(Enum):
+        DISTANCE_LEFT          = 0x25
         BATTERY_INFO           = 0x31
         BATTERY_PERCENTAGE     = 0x32
         BATTERY_CURRENT        = 0x33
         BATTERY_VOLTAGE        = 0x34
-        DISTANCE_SINCE_STARTUP = 0xB9
         SPEED                  = 0xB5
+        DISTANCE_SINCE_STARTUP = 0xB9
+        CRUISE                 = 0x7C
         LIGHT                  = 0x7D
         MOTOR_INFO             = 0xB0
-        DISTANCE_LEFT          = 0x25
 
     def __init__(self):
         self.direction  = None
@@ -178,9 +180,16 @@ class M365Message:
         .attribute(Attribute.LIGHT)                   \
         .payload([0x00, 0x00])                        \
         .build()
+
+    get_cruise_status = M365MessageBuilder()          \
+        .direction(Direction.MASTER_TO_MOTOR)         \
+        .read_write(ReadWrite.READ)                   \
+        .attribute(Attribute.CRUISE)                  \
+        .payload([0x02])                              \
+        .build()
     # <<<<
 
-    trip_supermaster = M365MessageBuilder()           \
+    motor_info = M365MessageBuilder()                 \
         .direction(Direction.MASTER_TO_MOTOR)         \
         .read_write(ReadWrite.READ)                   \
         .attribute(Attribute.MOTOR_INFO)              \
@@ -202,7 +211,7 @@ class M365Delegate(DefaultDelegate):
     def __init__(self, m365):
         DefaultDelegate.__init__(self)
         self._m365 = m365
-        self.trip_supermaster_first_part = None
+        self.motor_info_first_part = None
 
     @staticmethod
     def zip_namedtuple_with_tuple(named_tuple, tuple_values):
@@ -219,12 +228,13 @@ class M365Delegate(DefaultDelegate):
         direction, attribute = struct.unpack('<xxxBxB', payload[:6])
 
         try:
-            log.debug('{}, {}'.format(M365Message.Direction(direction), M365Message.Attribute(attribute)))
+            direction, attribute = M365Message.Direction(direction), M365Message.Attribute(attribute)
+            log.debug('{}, {}'.format(direction, attribute))
         except:
             pass
 
-        if direction == M365Message.Direction.BATTERY_TO_MASTER.value:
-            if attribute == M365Message.Attribute.BATTERY_INFO.value:
+        if direction == M365Message.Direction.BATTERY_TO_MASTER:
+            if attribute == M365Message.Attribute.BATTERY_INFO:
                 BatteryInfo = namedtuple('BatteryInfo', 'battery_capacity battery_percent battery_current battery_voltage battery_temperature_1 battery_temperature_2')
                 unpacked_tuple = struct.unpack('<HHhHBB', payload[6:16])
                 result = M365Delegate.zip_namedtuple_with_tuple(BatteryInfo, unpacked_tuple)
@@ -239,54 +249,87 @@ class M365Delegate(DefaultDelegate):
                 for key, value in result.items():
                     self._m365.state.__dict__[key] = value
 
-            elif attribute == M365Message.Attribute.BATTERY_VOLTAGE.value:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, result)
+
+            elif attribute == M365Message.Attribute.BATTERY_VOLTAGE:
                 (voltage,) = struct.unpack('<H', payload[6:8])
                 voltage /= 100 # V
                 log.debug('Got voltage: {} V'.format(voltage))
                 self._m365.state.battery_voltage = voltage
 
-            elif attribute == M365Message.Attribute.BATTERY_CURRENT.value:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, voltage)
+
+            elif attribute == M365Message.Attribute.BATTERY_CURRENT:
                 (current,) = struct.unpack('<h', payload[6:8])
                 current /= 100 # A
                 log.debug('Got current: {} A'.format(current))
                 self._m365.state.battery_current = current
 
-            elif attribute == M365Message.Attribute.BATTERY_PERCENTAGE.value:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, current)
+
+            elif attribute == M365Message.Attribute.BATTERY_PERCENTAGE:
                 (battery_percentage,) = struct.unpack('<H', payload[6:8])
                 log.debug('Got battery percentage: {} %'.format(battery_percentage))
                 self._m365.state.battery_percentage = battery_percentage
 
-        elif direction == M365Message.Direction.MOTOR_TO_MASTER.value:
-            if attribute == M365Message.Attribute.MOTOR_INFO.value:
-                self.trip_supermaster_first_part = payload
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, battery_percentage)
+
+        elif direction == M365Message.Direction.MOTOR_TO_MASTER:
+            if attribute == M365Message.Attribute.MOTOR_INFO:
+                # NOTE: This message is seperated into two packets, store payload and await next part
+                self.motor_info_first_part = payload
                 log.debug('Got motor info first part! waiting for second...')
 
-            elif attribute == M365Message.Attribute.DISTANCE_LEFT.value:
+            elif attribute == M365Message.Attribute.DISTANCE_LEFT:
                 (distance_left,) = struct.unpack('<H', payload[6:8])
                 distance_left /= 100
                 log.debug('Got distance left: {} km'.format(distance_left))
                 self._m365.state.distance_left_km = distance_left
 
-            elif attribute == M365Message.Attribute.SPEED.value:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, distance_left)
+
+            elif attribute == M365Message.Attribute.SPEED:
                 (speed,) = struct.unpack('<H', payload[6:8])
                 speed /= 100
                 log.debug('Got speed: {} kmh'.format(speed))
                 self._m365.state.speed_kmh = speed
 
-            elif attribute == M365Message.Attribute.DISTANCE_SINCE_STARTUP.value:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, speed)
+
+            elif attribute == M365Message.Attribute.DISTANCE_SINCE_STARTUP:
                 (distance_since_startup,) = struct.unpack('<H', payload[6:8])
                 distance_since_startup_km = distance_since_startup / 1000
                 log.debug('Got distance since startup: {} km'.format(distance_since_startup_km))
                 self._m365.state.distance_since_startup_km = distance_since_startup_km
 
-            elif attribute == M365Message.Attribute.LIGHT.value:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, distance_since_startup_km)
+
+            elif attribute == M365Message.Attribute.LIGHT:
                 is_light_on = payload[6] == 0x02
                 log.debug('Got light on: {}'.format(is_light_on))
                 self._m365.state.is_light_on = is_light_on
 
-        elif self.trip_supermaster_first_part != None:
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, is_light_on)
+
+            elif attribute == M365Message.Attribute.CRUISE:
+                is_cruise_on = payload[6] == 0x01
+                log.debug('Got cruise on: {}'.format(is_cruise_on))
+                self._m365.state.is_in_cruise_mode = is_cruise_on
+
+                if self._m365._callback:
+                    self._m365._callback(self._m365, direction, attribute, is_cruise_on)
+
+        elif self.motor_info_first_part != None:
             combined_payload = bytearray()
-            combined_payload.extend(self.trip_supermaster_first_part)
+            combined_payload.extend(self.motor_info_first_part)
             combined_payload.extend(payload)
             combined_payload = bytes(combined_payload)
 
@@ -306,31 +349,32 @@ class M365Delegate(DefaultDelegate):
             self._m365.state.odometer_km       = result['odometer']
             self._m365.state.frame_temperature = result['frame_temperature']
 
-            self.trip_supermaster_first_part = None
+            self.motor_info_first_part = None
+
+            if self._m365._callback:
+                self._m365._callback(self._m365, direction, attribute, result)
         else:
             log.warning('Unhandled message')
 
-        # try:
-        #     print("String: " + data[5:].decode())
-        # except:
-        #     pass
+
 
 @dataclass
 class M365State():
-    speed_kmh: float                 = None
-    speed_average_kmh: float         = None
-    distance_left_km: float          = None
-    odometer_km: float               = None
-    distance_since_startup_km: float = None
-    frame_temperature: float         = None # °C
-    is_light_on: bool                = None # bool
+    speed_kmh                 : float = None
+    speed_average_kmh         : float = None
+    distance_left_km          : float = None
+    odometer_km               : float = None
+    distance_since_startup_km : float = None
+    frame_temperature         : float = None # °C
+    is_light_on               : bool  = None # bool
+    is_in_cruise_mode         : bool  = None
 
-    battery_percent: int             = None # %
-    battery_voltage: float           = None # V
-    battery_capacity: float          = None # Ah
-    battery_current: float           = None # A
-    battery_temperature_1: float     = None # °C
-    battery_temperature_2: float     = None # °C
+    battery_percent       : int   = None # %
+    battery_voltage       : float = None # V
+    battery_capacity      : float = None # Ah
+    battery_current       : float = None # A
+    battery_temperature_1 : float = None # °C
+    battery_temperature_2 : float = None # °C
 
     def as_dict(self): return self.__dict__
 
@@ -342,11 +386,12 @@ class M365(Peripheral):
     RX_CHARACTERISTIC = UUID('6e400003-b5a3-f393-e0a9-e50e24dcca9e')
     TX_CHARACTERISTIC = UUID('6e400002-b5a3-f393-e0a9-e50e24dcca9e')
 
-    def __init__(self, mac_address, delegate=None):
+    def __init__(self, mac_address, callback=None):
         Peripheral.__init__(self)
         self.mac_address = mac_address
 
         self.state = M365State()
+        self._callback = callback
 
     @staticmethod
     def _find_characteristic(uuid: UUID, chars: Iterable[Characteristic]) -> Optional[Characteristic]:
@@ -395,5 +440,4 @@ class M365(Peripheral):
                 log.warning('{}, reconnecting'.format(e))
                 self.disconnect()
                 self._try_connect()
-
 

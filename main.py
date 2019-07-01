@@ -1,18 +1,21 @@
 from m365py import *
 
-scooter_mac_address = 'D6:0E:DB:7B:EA:AB'
+def callback(m365_peripheral, direction, attribute, value):
+    print('Got {} with value {}'.format(attribute, value))
 
-scooter = M365(scooter_mac_address)
+
+scooter_mac_address = 'D6:0E:DB:7B:EA:AB'
+scooter = M365(scooter_mac_address, callback)
 scooter.connect()
 
 update_interval_s = 5.0
 while True:
     start_time = time.time()
-    scooter.send(M365Message.trip_supermaster)
+    scooter.send(M365Message.motor_info)
     scooter.send(M365Message.get_distance_left)
     scooter.send(M365Message.battery_info)
+    scooter.send(M365Message.get_cruise_status)
 
-    # TODO: better check if all data was received
     received_within_timeout = scooter.waitForNotifications(update_interval_s)
     if not received_within_timeout: continue
 
