@@ -1,6 +1,5 @@
 from typing import Callable, Iterable, Optional
 from collections import namedtuple
-from dataclasses import dataclass
 from enum import Enum
 import struct
 import time
@@ -358,23 +357,22 @@ class M365Delegate(DefaultDelegate):
 
 
 
-@dataclass
 class M365State():
-    speed_kmh                 : float = None
-    speed_average_kmh         : float = None
-    distance_left_km          : float = None
-    odometer_km               : float = None
-    distance_since_startup_km : float = None
-    frame_temperature         : float = None # °C
-    is_light_on               : bool  = None # bool
-    is_in_cruise_mode         : bool  = None
+    speed_kmh                  = None
+    speed_average_kmh          = None
+    distance_left_km           = None
+    odometer_km                = None
+    distance_since_startup_km  = None
+    frame_temperature          = None # °C
+    is_light_on                = None # bool
+    is_in_cruise_mode          = None
 
-    battery_percent       : int   = None # %
-    battery_voltage       : float = None # V
-    battery_capacity      : float = None # Ah
-    battery_current       : float = None # A
-    battery_temperature_1 : float = None # °C
-    battery_temperature_2 : float = None # °C
+    battery_percent        = None # %
+    battery_voltage        = None # V
+    battery_capacity       = None # Ah
+    battery_current        = None # A
+    battery_temperature_1  = None # °C
+    battery_temperature_2  = None # °C
 
     def as_dict(self): return self.__dict__
 
