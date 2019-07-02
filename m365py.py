@@ -305,6 +305,7 @@ class M365Delegate(DefaultDelegate):
                 # NOTE: This message is seperated into two packets, store payload and await next part
                 self.motor_info_first_part = payload
                 log.debug('Got motor info first part! waiting for second...')
+                return
 
 
             elif attribute == M365Message.Attribute.DISTANCE_LEFT:
@@ -350,6 +351,9 @@ class M365Delegate(DefaultDelegate):
 
 
         elif self.motor_info_first_part != None:
+            direction = M365Message.Direction.MOTOR_TO_MASTER
+            attribute = M365Message.Attribute.MOTOR_INFO
+
             combined_payload = bytearray()
             combined_payload.extend(self.motor_info_first_part)
             combined_payload.extend(payload)
