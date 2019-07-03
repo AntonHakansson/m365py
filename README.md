@@ -12,7 +12,7 @@ pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
 ```
 
 ## Usage
-See `examples` folders for full example of all supported requests.
+See `examples` folder for full example of all supported requests.
 
 ```python
 import time
