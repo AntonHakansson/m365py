@@ -9,28 +9,11 @@ from m365py import m365message
 import logging
 logging.getLogger('m365py').setLevel(logging.DEBUG)
 
-# >>>> NOTE: This is used to scan for nearby Scooters
-# def scan_for_scooters():
-#     """ Scans for available devices. """
-#     scan = btle.Scanner()
-#     sec = 5
-#     print("Scanning for %s seconds" % sec)
-#     devs = scan.scan(sec)
-#     print("Devices found:")
-#     for dev in devs:
-#         localname = dev.getValueText(9)
-#         if localname and localname.startswith("MIScooter"):
-#             print("  %s (%s), rssi=%d" % (dev.addr, localname, dev.rssi))
-
-# scan_for_scooters()
-# exit(0)
-# <<<<
-
 # callback for received messages from scooter
 def handle_message(m365_peripheral, m365_message, value):
     print('{} => {}'.format(m365_message._attribute, json.dumps(value, indent=4)))
 
-scooter_mac_address = 'D6:0E:DB:7B:EA:AB'   # WirelessScooter
+scooter_mac_address = 'D6:0E:DB:7B:EA:AB'
 scooter = m365py.M365(scooter_mac_address, handle_message)
 scooter.connect()
 
