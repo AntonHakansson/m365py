@@ -59,12 +59,16 @@ class M365Delegate(DefaultDelegate):
             )
 
         elif message._attribute == Attribute.TAIL_LIGHT:
-            is_light_on = message._payload[0] == 0x02
-            result = {'is_tail_light_on': is_light_on}
+            result = M365Delegate.unpack_to_dict(
+                'is_tail_light_on',
+                struct.unpack('<H', message._payload)
+            )
 
         elif message._attribute == Attribute.CRUISE:
-            is_cruise_on = message._payload[0] == 0x01
-            result = {'is_cruise_on': is_cruise_on}
+            result = M365Delegate.unpack_to_dict(
+                'is_cruise_on',
+                struct.unpack('<H', message._payload)
+            )
 
         elif message._attribute == Attribute.BATTERY_INFO:
             result = M365Delegate.unpack_to_dict(
@@ -100,8 +104,9 @@ class M365Delegate(DefaultDelegate):
 
         elif message._attribute == Attribute.MOTOR_INFO:
             result = M365Delegate.unpack_to_dict(
-                'error warning flags workmode battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature',
-                struct.unpack('<HHHHHhHIhhhxxxxxxxx', message._payload)
+                # 'error warning flags workmode battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature',
+                'battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature',
+                struct.unpack('<xxxxxxxxHhHIhhhxxxxxxxx', message._payload)
             )
 
         elif message._attribute == Attribute.TRIP_INFO:
@@ -128,7 +133,7 @@ class M365Delegate(DefaultDelegate):
             #          [ kers ] [cruise] [taillight]
             # payload: /x00/x00 /x00/x00 /x00/x00
             result = M365Delegate.unpack_to_dict(
-                'kers cruise_mode tail_light',
+                'kers is_cruise_on is_tail_light_on',
                 struct.unpack('<HHH', message._payload)
             )
 
@@ -154,6 +159,8 @@ class M365Delegate(DefaultDelegate):
         try_update_field(result, 'battery_voltage',       lambda x: x / 100)  # A
         try_update_field(result, 'battery_temperature_1', lambda x: x - 20)   # °C
         try_update_field(result, 'battery_temperature_2', lambda x: x - 20)   # °C
+        try_update_field(result, 'is_tail_light_on',      lambda x: x == 0x02)   # °C
+        try_update_field(result, 'is_cruise_on',          lambda x: x == 0x01)   # °C
 
         if 'version' in result:
             result['version'] = '{:02x}'.format(result['version'])
