@@ -1,6 +1,5 @@
 import time
 import json
-from bluepy import btle
 
 from m365py import m365py
 from m365py import m365message

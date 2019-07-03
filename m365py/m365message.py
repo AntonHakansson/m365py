@@ -1,22 +1,22 @@
-from enum import Enum
+import binascii
 import struct
 
 def phex(s):
-    return ''.join('/x{:02x}'.format(x) for x in s)
+    return binascii.hexlify(s)
 
 HEADER = 0xAA55
 
-class Direction(Enum):
+class Direction():
     MASTER_TO_MOTOR      = 0x20
     MASTER_TO_BATTERY    = 0x22
     MOTOR_TO_MASTER      = 0x23
     BATTERY_TO_MASTER    = 0x25
 
-class ReadWrite(Enum):
+class ReadWrite():
     READ  = 0x01
     WRITE = 0x03
 
-class Attribute(Enum):
+class Attribute():
     GENERAL_INFO           = 0x10 # serial, pin, fwversion
     # GENERAL_INFO_EXTENDED  = 0x10 # TODO: serial, fwversion, totalcapacity, cycles, chargingtimes, productiondate
     DISTANCE_LEFT          = 0x25
@@ -71,12 +71,12 @@ class Message:
 
     def _calc_checksum(self):
         checksum = 0
-        checksum += self._direction.value
-        checksum += self._read_write.value
-        checksum += self._attribute.value
+        checksum += self._direction
+        checksum += self._read_write
+        checksum += self._attribute
 
         for byte in self._payload:
-            checksum += byte
+            checksum += struct.unpack('>B', byte)[0]
         checksum += len(self._payload) + 2
         checksum ^= 0xffff
         checksum &= 0xffff
@@ -91,9 +91,9 @@ class Message:
         result.extend(struct.pack('<H', HEADER))
         # >>>> these are single byte so we don't have to worry about byte order
         result.append(len(self._payload) + 2)
-        result.append(self._direction.value)
-        result.append(self._read_write.value)
-        result.append(self._attribute.value)
+        result.append(self._direction)
+        result.append(self._read_write)
+        result.append(self._attribute)
         # <<<<
         result.extend(self._payload) # TODO: store payload as big endian in class
         result.extend(struct.pack('<H', self._checksum))
@@ -111,9 +111,6 @@ class Message:
         if header != HEADER:              return ParseStatus.INVALID_HEADER , None
         if payload_end > message_length:  return ParseStatus.DISJOINTED     , None
 
-        direction  = Direction(direction)
-        read_write = ReadWrite(read_write)
-        attribute  = Attribute(attribute)
         payload    = message[payload_start:payload_end]
 
         result = Message()          \

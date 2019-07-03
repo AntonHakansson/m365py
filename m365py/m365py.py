@@ -1,6 +1,5 @@
 from .m365message import *
 
-from typing import Callable, Iterable, Optional
 from collections import namedtuple
 
 import struct
@@ -12,6 +11,11 @@ from bluepy.btle import Peripheral, Characteristic, UUID, DefaultDelegate, ADDR_
 
 log = logging.getLogger('m365py')
 
+class KersMode():
+    WEAK   = 0x00
+    MEDIUM = 0x01
+    STRONG = 0x02
+
 class M365Delegate(DefaultDelegate):
     def __init__(self, m365):
         DefaultDelegate.__init__(self)
@@ -21,11 +25,6 @@ class M365Delegate(DefaultDelegate):
         self.motor_info_first_part = None
         self.general_info_first_part = None
 
-        stream_handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        stream_handler.setFormatter(formatter)
-
-        log.addHandler(stream_handler)
 
     @staticmethod
     def unpack_to_dict(fields, unpacked_tuple):
@@ -129,7 +128,7 @@ class M365Delegate(DefaultDelegate):
                 result['cell_voltages'].append(voltage / 100) # V
 
         elif message._attribute == Attribute.SUPPLEMENTARY:
-            # TODO:  Proper states for kers & cruise mode instead of byte value
+            # TODO:  Proper states for kers mode instead of byte value
             #          [ kers ] [cruise] [taillight]
             # payload: /x00/x00 /x00/x00 /x00/x00
             result = M365Delegate.unpack_to_dict(
@@ -147,20 +146,21 @@ class M365Delegate(DefaultDelegate):
                 result[key] = new_val
 
         # Convert raw bytes to corresponing type
-        try_update_field(result, 'serial',                lambda x: x.decode('utf-8'))   # °C
-        try_update_field(result, 'pin',                   lambda x: x.decode('utf-8'))   # °C
+        try_update_field(result, 'serial',                lambda x: x.decode('utf-8'))
+        try_update_field(result, 'pin',                   lambda x: x.decode('utf-8'))
         try_update_field(result, 'speed_kmh',             lambda x: x / 100)  # km/h
         try_update_field(result, 'speed_average_kmh',     lambda x: x / 100)  # km/h
         try_update_field(result, 'distance_left_km',      lambda x: x / 100)  # km
-        try_update_field(result, 'frame_temperature',     lambda x: x / 10)   # °C
+        try_update_field(result, 'frame_temperature',     lambda x: x / 10)   # C
         try_update_field(result, 'odometer_km',           lambda x: x / 1000) # km
         try_update_field(result, 'battery_capacity',      lambda x: x / 1000) # Ah
         try_update_field(result, 'battery_current',       lambda x: x / 100)  # A
-        try_update_field(result, 'battery_voltage',       lambda x: x / 100)  # A
-        try_update_field(result, 'battery_temperature_1', lambda x: x - 20)   # °C
-        try_update_field(result, 'battery_temperature_2', lambda x: x - 20)   # °C
-        try_update_field(result, 'is_tail_light_on',      lambda x: x == 0x02)   # °C
-        try_update_field(result, 'is_cruise_on',          lambda x: x == 0x01)   # °C
+        try_update_field(result, 'battery_voltage',       lambda x: x / 100)  # V
+        try_update_field(result, 'battery_temperature_1', lambda x: x - 20)   # C
+        try_update_field(result, 'battery_temperature_2', lambda x: x - 20)   # C
+        try_update_field(result, 'is_tail_light_on',      lambda x: x == 0x02)   # bool
+        try_update_field(result, 'is_cruise_on',          lambda x: x == 0x01)   # bool
+        try_update_field(result, 'kers',                  lambda x: x)   # bool
 
         if 'version' in result:
             result['version'] = '{:02x}'.format(result['version'])
@@ -217,8 +217,14 @@ class M365(Peripheral):
         self.cached_state = {}
         self._callback = callback
 
+        stream_handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        stream_handler.setFormatter(formatter)
+
+        log.addHandler(stream_handler)
+
     @staticmethod
-    def _find_characteristic(uuid: UUID, chars: Iterable[Characteristic]) -> Optional[Characteristic]:
+    def _find_characteristic(uuid, chars):
         results = filter(lambda x: x.uuid == uuid, chars)
         for result in results:  # return the first match
             return result
@@ -229,20 +235,16 @@ class M365(Peripheral):
 
         while True:
             try:
-                super(M365, self).connect(self.mac_address, addrType=ADDR_TYPE_RANDOM)
+                Peripheral.connect(self, self.mac_address, addrType=ADDR_TYPE_RANDOM)
                 log.info('Successfully connected to Scooter: ' + self.mac_address)
 
                 # Turn on notifications, otherwise there won't be any notification
-                self.writeCharacteristic(0xc, b'\x01\x00', True)
+                self.writeCharacteristic(0xc,  b'\x01\x00', True)
                 self.writeCharacteristic(0x12, b'\x01\x00', True)
 
                 self._all_characteristics = self.getCharacteristics()
                 self._tx_char = M365._find_characteristic(M365.TX_CHARACTERISTIC, self._all_characteristics)
                 self._rx_char = M365._find_characteristic(M365.RX_CHARACTERISTIC, self._all_characteristics)
-
-                log.debug('{}, handle: {:x}, properties: {}'.format(self._tx_char, self._tx_char.getHandle(), self._tx_char.propertiesToString()))
-                log.debug('{}, handle: {:x}, properties: {}'.format(self._rx_char, self._rx_char.getHandle(), self._rx_char.propertiesToString()))
-
                 break
 
             except Exception as e:
