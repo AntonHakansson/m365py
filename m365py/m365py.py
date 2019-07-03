@@ -37,6 +37,7 @@ class M365Delegate(DefaultDelegate):
 
     def handle_message(self, message):
         log.debug("Received message: {}".format(message.as_dict()))
+        log.debug("Payload: {}".format(phex(message._payload)))
 
         result = {}
         if message._attribute == Attribute.DISTANCE_LEFT:
@@ -45,15 +46,11 @@ class M365Delegate(DefaultDelegate):
                 struct.unpack('<H', message._payload)
             )
 
-            result['distance_left_km'] /= 100  # km
-
         elif message._attribute == Attribute.SPEED:
             result = M365Delegate.unpack_to_dict(
                 'speed_kmh',
                 struct.unpack('<h', message._payload)
             )
-
-            result['speed_kmh'] /= 100
 
         elif message._attribute == Attribute.TRIP_DISTANCE:
             result = M365Delegate.unpack_to_dict(
@@ -75,27 +72,17 @@ class M365Delegate(DefaultDelegate):
                 struct.unpack('<HHhHBB', message._payload)
             )
 
-            result['battery_capacity']      /= 1000 # Ah
-            result['battery_current']       /= 100  # A
-            result['battery_voltage']       /= 100  # V
-            result['battery_temperature_1'] -= 20   # C
-            result['battery_temperature_2'] -= 20   # C
-
         elif message._attribute == Attribute.BATTERY_VOLTAGE:
             result = M365Delegate.unpack_to_dict(
                 'battery_voltage',
                 struct.unpack('<H', message._payload)
             )
 
-            result['battery_voltage'] /= 100 # V
-
         elif message._attribute == Attribute.BATTERY_CURRENT:
             result = M365Delegate.unpack_to_dict(
                 'battery_current',
                 struct.unpack('<h', message._payload)
             )
-
-            result['battery_current'] /= 100 # A
 
         elif message._attribute == Attribute.BATTERY_PERCENT:
             result = M365Delegate.unpack_to_dict(
@@ -110,21 +97,12 @@ class M365Delegate(DefaultDelegate):
                 'serial pin version',
                 struct.unpack('<14s6sH', message._payload)
             )
-            result['serial']  = result['serial'].decode('utf-8')
-            result['pin']     = result['pin'].decode('utf-8')
-            result['version'] = '{:02x}'.format(result['version'])
-            result['version'] = 'V' + result['version'][0] + '.' + result['version'][1] + '.' + result['version'][2]
 
         elif message._attribute == Attribute.MOTOR_INFO:
             result = M365Delegate.unpack_to_dict(
                 'error warning flags workmode battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature',
                 struct.unpack('<HHHHHhHIhhhxxxxxxxx', message._payload)
             )
-
-            result['speed_kmh']         /= 100  # km /h
-            result['speed_average_kmh'] /= 100  # km /h
-            result['odometer_km']       /= 1000 # km
-            result['frame_temperature'] /= 10   # °C
 
         elif message._attribute == Attribute.TRIP_INFO:
             #          [uptime][]
@@ -134,23 +112,19 @@ class M365Delegate(DefaultDelegate):
                 struct.unpack('<HIxxh', message._payload)
             )
 
-            result['frame_temperature'] /= 10   # °C
-
         elif message._attribute == Attribute.BATTERY_CELL_VOLTAGES:
             #          [cell1 ][cell2 ]                     ...                                [cell10][           ???            ]
             # payload: /x2d/x10/x2e/x10/x1d/x10/x2f/x10/x34/x10/x34/x10/x3a/x10/x3a/x10/x2e/x10/x2f/x10/x00/x00/x00/x00/x00/x00/x00
             print(phex(message._payload))
-            result = M365Delegate.unpack_to_dict(
-                '''cell_1_voltage cell_2_voltage cell_3_voltage cell_4_voltage
-                cell_5_voltage cell_6_voltage cell_7_voltage cell_8_voltage
-                cell_9_voltage cell_10_voltage''',
-                struct.unpack('<HHHHHHHHHHxxxxxxx', message._payload)
-            )
+            cell_voltages_tuple = struct.unpack('<HHHHHHHHHHxxxxxxx', message._payload)
 
-            for key, value in result.items():
-                result[key] = value / 100 # V
+            result['cell_voltages'] = []
+
+            for voltage in cell_voltages_tuple:
+                result['cell_voltages'].append(voltage / 100) # V
 
         elif message._attribute == Attribute.SUPPLEMENTARY:
+            # TODO:  Proper states for kers & cruise mode instead of byte value
             #          [ kers ] [cruise] [taillight]
             # payload: /x00/x00 /x00/x00 /x00/x00
             result = M365Delegate.unpack_to_dict(
@@ -161,6 +135,29 @@ class M365Delegate(DefaultDelegate):
         else:
             log.warning('Unhandled message!')
             return
+
+        def try_update_field(result, key, func):
+            if key in result:
+                new_val = func(result[key])
+                result[key] = new_val
+
+        # Convert raw bytes to corresponing type
+        try_update_field(result, 'serial',                lambda x: x.decode('utf-8'))   # °C
+        try_update_field(result, 'pin',                   lambda x: x.decode('utf-8'))   # °C
+        try_update_field(result, 'speed_kmh',             lambda x: x / 100)  # km/h
+        try_update_field(result, 'speed_average_kmh',     lambda x: x / 100)  # km/h
+        try_update_field(result, 'distance_left_km',      lambda x: x / 100)  # km
+        try_update_field(result, 'frame_temperature',     lambda x: x / 10)   # °C
+        try_update_field(result, 'odometer_km',           lambda x: x / 1000) # km
+        try_update_field(result, 'battery_capacity',      lambda x: x / 1000) # Ah
+        try_update_field(result, 'battery_current',       lambda x: x / 100)  # A
+        try_update_field(result, 'battery_voltage',       lambda x: x / 100)  # A
+        try_update_field(result, 'battery_temperature_1', lambda x: x - 20)   # °C
+        try_update_field(result, 'battery_temperature_2', lambda x: x - 20)   # °C
+
+        if 'version' in result:
+            result['version'] = '{:02x}'.format(result['version'])
+            result['version'] = 'V' + result['version'][0] + '.' + result['version'][1] + '.' + result['version'][2]
 
         # write result to m365 cached state
         for key, value in result.items():
