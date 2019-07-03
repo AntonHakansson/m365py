@@ -15,6 +15,9 @@ pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
 See `examples` folders for full example of all supported requests.
 
 ```python
+import time
+import json
+
 from m365py import m365py
 from m365py import m365message
 
@@ -33,7 +36,7 @@ def handle_message(m365_peripheral, m365_message, value):
     #   "frame_temperature": 24.0
     # }
 
-scooter_mac_address = 'D6:0E:DB:7B:EA:AB'
+scooter_mac_address = 'XX:XX:XX:XX:XX:XX'
 scooter = m365py.M365(scooter_mac_address, handle_message)
 scooter.connect()
 
