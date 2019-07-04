@@ -5,7 +5,7 @@
 
 A Python2.7 and Python3.x library to receive parsed BLE Xiaomi M365 scooter messages using [bluepy](https://github.com/IanHarvey/bluepy).
 
-This library is targeted for support for Xiaomi M365 firmware version `V1.3.8` - other versions may not work as intended.
+This library is targeted for support for Xiaomi M365 firmware version `V1.3.8` - other versions may not work as intended, confirmed to not work on `V1.5.x`.
 
 ## Installation using pip
 ```sh
