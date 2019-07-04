@@ -207,9 +207,10 @@ class M365(Peripheral):
     RX_CHARACTERISTIC = UUID('6e400003-b5a3-f393-e0a9-e50e24dcca9e')
     TX_CHARACTERISTIC = UUID('6e400002-b5a3-f393-e0a9-e50e24dcca9e')
 
-    def __init__(self, mac_address, callback=None):
+    def __init__(self, mac_address, callback=None, auto_reconnect=True):
         Peripheral.__init__(self)
         self.mac_address = mac_address
+        self._auto_reconnect = auto_reconnect
 
         self.cached_state = {}
         self._callback = callback
@@ -228,7 +229,8 @@ class M365(Peripheral):
         return None
 
     def _try_connect(self):
-        log.info('Attempting to indefinitely connect to Scooter: ' + self.mac_address)
+        log.info('Attempting to {}connect to Scooter: {}'.format('indefinitely ' if self._auto_reconnect else '',
+                                                                  self.mac_address))
 
         while True:
             try:
@@ -245,7 +247,15 @@ class M365(Peripheral):
                 break
 
             except Exception as e:
-                log.warning('{}, retrying'.format(e))
+                if self._auto_reconnect == True:
+                    log.warning('{}, retrying'.format(e))
+                    self._try_reconnect()
+                else:
+                    raise e
+
+    def _try_reconnect(self):
+        self.disconnect()
+        self._try_connect()
 
     def connect(self):
         self._try_connect()
@@ -260,7 +270,19 @@ class M365(Peripheral):
                 self._rx_char.read()
                 break
             except Exception as e:
+                if self._auto_reconnect == True:
+                    log.warning('{}, reconnecting'.format(e))
+                    self._try_reconnect()
+                else:
+                    raise e
+
+    def waitForNotifications(self, timeout):
+        try:
+            Peripheral.waitForNotifications(self, timeout)
+        except Exception as e:
+            if self._auto_reconnect == True:
                 log.warning('{}, reconnecting'.format(e))
-                self.disconnect()
-                self._try_connect()
+                self._try_reconnect()
+            else:
+                raise e
 
