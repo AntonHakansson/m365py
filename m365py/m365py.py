@@ -20,11 +20,7 @@ class M365Delegate(DefaultDelegate):
     def __init__(self, m365):
         DefaultDelegate.__init__(self)
         self._m365 = m365
-        self.disjointed_messages = []
-
-        self.motor_info_first_part = None
-        self.general_info_first_part = None
-
+        self._disjointed_messages = []
 
     @staticmethod
     def unpack_to_dict(fields, unpacked_tuple):
@@ -186,12 +182,12 @@ class M365Delegate(DefaultDelegate):
             self.handle_message(message)
 
         elif parse_status == ParseStatus.DISJOINTED:
-            self.disjointed_messages.append(data)
+            self._disjointed_messages.append(data)
 
         elif parse_status == ParseStatus.INVALID_HEADER:
             # This could mean we got rest of disjointed message
             # TODO: if no matching message was found... warn the user
-            for i, prev_data in enumerate(self.disjointed_messages):
+            for i, prev_data in enumerate(self._disjointed_messages):
                 combined_data = bytearray()
                 combined_data.extend(prev_data)
                 combined_data.extend(data)
@@ -201,7 +197,7 @@ class M365Delegate(DefaultDelegate):
                 parse_status, message = Message.parse_from_bytes(combined_data)
                 if parse_status == ParseStatus.OK:
                     self.handle_message(message)
-                    del self.disjointed_messages[i]
+                    del self._disjointed_messages[i]
 
         elif parse_status == ParseStatus.INVALID_CHECKSUM:
             log.warning('Received packet with invalid checksum')
