@@ -10,7 +10,16 @@ logging.getLogger('m365py').setLevel(logging.DEBUG)
 
 # callback for received messages from scooter
 def handle_message(m365_peripheral, m365_message, value):
-    print('{} => {}'.format(m365_message._attribute, json.dumps(value, indent=4)))
+    print('Received message => {}'.format(json.dumps(value, indent=4)))
+
+    # check for specific message
+    if m365_message.attribute == m365message.Attribute.BATTERY_VOLTAGE:
+        print('Battery voltage {} V'.format(value['battery_voltage']))
+
+    if m365_message.attribute == m365message.Attribute.SUPPLEMENTARY:
+        if value['kers_mode'] == m365py.KersMode.WEAK:
+            print('kers set to weak')
+
 
 scooter_mac_address = 'D6:0E:DB:7B:EA:AB'
 scooter = m365py.M365(scooter_mac_address, handle_message)

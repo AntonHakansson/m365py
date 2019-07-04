@@ -35,104 +35,104 @@ class M365Delegate(DefaultDelegate):
         return result
 
     def handle_message(self, message):
-        log.debug("Received message: {}".format(message.as_dict()))
-        log.debug("Payload: {}".format(phex(message._payload)))
+        log.debug("Received message: {}".format(message.__dict__))
+        log.debug("Payload: {}".format(phex(message.payload)))
 
         result = {}
-        if message._attribute == Attribute.DISTANCE_LEFT:
+        if message.attribute == Attribute.DISTANCE_LEFT:
             result = M365Delegate.unpack_to_dict(
                 'distance_left_km',
-                struct.unpack('<H', message._payload)
+                struct.unpack('<H', message.payload)
             )
 
-        elif message._attribute == Attribute.SPEED:
+        elif message.attribute == Attribute.SPEED:
             result = M365Delegate.unpack_to_dict(
                 'speed_kmh',
-                struct.unpack('<h', message._payload)
+                struct.unpack('<h', message.payload)
             )
 
-        elif message._attribute == Attribute.TRIP_DISTANCE:
+        elif message.attribute == Attribute.TRIP_DISTANCE:
             result = M365Delegate.unpack_to_dict(
                 'trip_distance_m',
-                struct.unpack('<H', message._payload)
+                struct.unpack('<H', message.payload)
             )
 
-        elif message._attribute == Attribute.TAIL_LIGHT:
+        elif message.attribute == Attribute.TAIL_LIGHT:
             result = M365Delegate.unpack_to_dict(
                 'is_tail_light_on',
-                struct.unpack('<H', message._payload)
+                struct.unpack('<H', message.payload)
             )
 
-        elif message._attribute == Attribute.CRUISE:
+        elif message.attribute == Attribute.CRUISE:
             result = M365Delegate.unpack_to_dict(
                 'is_cruise_on',
-                struct.unpack('<H', message._payload)
+                struct.unpack('<H', message.payload)
             )
 
-        elif message._attribute == Attribute.BATTERY_INFO:
+        elif message.attribute == Attribute.BATTERY_INFO:
             result = M365Delegate.unpack_to_dict(
                 'battery_capacity battery_percent battery_current battery_voltage battery_temperature_1 battery_temperature_2',
-                struct.unpack('<HHhHBB', message._payload)
+                struct.unpack('<HHhHBB', message.payload)
             )
 
-        elif message._attribute == Attribute.BATTERY_VOLTAGE:
+        elif message.attribute == Attribute.BATTERY_VOLTAGE:
             result = M365Delegate.unpack_to_dict(
                 'battery_voltage',
-                struct.unpack('<H', message._payload)
+                struct.unpack('<H', message.payload)
             )
 
-        elif message._attribute == Attribute.BATTERY_CURRENT:
+        elif message.attribute == Attribute.BATTERY_CURRENT:
             result = M365Delegate.unpack_to_dict(
                 'battery_current',
-                struct.unpack('<h', message._payload)
+                struct.unpack('<h', message.payload)
             )
 
-        elif message._attribute == Attribute.BATTERY_PERCENT:
+        elif message.attribute == Attribute.BATTERY_PERCENT:
             result = M365Delegate.unpack_to_dict(
                 'battery_percent',
-                struct.unpack('<H', message._payload)
+                struct.unpack('<H', message.payload)
             )
 
-        elif message._attribute == Attribute.GENERAL_INFO:
+        elif message.attribute == Attribute.GENERAL_INFO:
             #          [                      SERIAL                          ][          PIN         ][ VER  ]
             # payload: /x31/x36/x31/x33/x32/x2f/x30/x30/x30/x39/x35/x32/x39/x32/x30/x30/x30/x30/x30/x30/x38/x01
             result = M365Delegate.unpack_to_dict(
                 'serial pin version',
-                struct.unpack('<14s6sH', message._payload)
+                struct.unpack('<14s6sH', message.payload)
             )
 
-        elif message._attribute == Attribute.MOTOR_INFO:
+        elif message.attribute == Attribute.MOTOR_INFO:
             result = M365Delegate.unpack_to_dict(
                 # 'error warning flags workmode battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature',
                 'battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature',
-                struct.unpack('<xxxxxxxxHhHIhhhxxxxxxxx', message._payload)
+                struct.unpack('<xxxxxxxxHhHIhhhxxxxxxxx', message.payload)
             )
 
-        elif message._attribute == Attribute.TRIP_INFO:
+        elif message.attribute == Attribute.TRIP_INFO:
             #          [uptime][]
             # payload: xec/x00 /x00/x00/x00/x00/x00/x00/xe6/x00
             result = M365Delegate.unpack_to_dict(
                 'uptime_s trip_distance_m frame_temperature',
-                struct.unpack('<HIxxh', message._payload)
+                struct.unpack('<HIxxh', message.payload)
             )
 
-        elif message._attribute == Attribute.BATTERY_CELL_VOLTAGES:
+        elif message.attribute == Attribute.BATTERY_CELL_VOLTAGES:
             #          [cell1 ][cell2 ]                     ...                                [cell10][           ???            ]
             # payload: /x2d/x10/x2e/x10/x1d/x10/x2f/x10/x34/x10/x34/x10/x3a/x10/x3a/x10/x2e/x10/x2f/x10/x00/x00/x00/x00/x00/x00/x00
-            cell_voltages_tuple = struct.unpack('<HHHHHHHHHHxxxxxxx', message._payload)
+            cell_voltages_tuple = struct.unpack('<HHHHHHHHHHxxxxxxx', message.payload)
 
             result['cell_voltages'] = []
 
             for voltage in cell_voltages_tuple:
                 result['cell_voltages'].append(float(voltage) / 100) # V
 
-        elif message._attribute == Attribute.SUPPLEMENTARY:
+        elif message.attribute == Attribute.SUPPLEMENTARY:
             # TODO:  Proper states for kers mode instead of byte value
             #          [ kers ] [cruise] [taillight]
             # payload: /x00/x00 /x00/x00 /x00/x00
             result = M365Delegate.unpack_to_dict(
                 'kers_mode is_cruise_on is_tail_light_on',
-                struct.unpack('<HHH', message._payload)
+                struct.unpack('<HHH', message.payload)
             )
 
         else:

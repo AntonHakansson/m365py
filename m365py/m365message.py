@@ -31,7 +31,7 @@ class Attribute():
     CRUISE                 = 0x7C
     TAIL_LIGHT             = 0x7D
     MOTOR_INFO             = 0xB0 # error warning flags workmode battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature
-    SUPPLEMENTARY          = 0x7B # kers, cruisemode, taillight
+    SUPPLEMENTARY          = 0x7B # kers_mode, cruisemode, taillight
 
 class ParseStatus:
     OK               = 'ok'
@@ -42,53 +42,51 @@ class ParseStatus:
 class Message:
 
     def __init__(self):
-        self._direction  = None
-        self._read_write = None
-        self._attribute  = None
-        self._payload    = None
+        self.direction  = None
+        self.read_write = None
+        self.attribute  = None
+        self.payload    = None
 
         self._checksum  = None
         self._raw_bytes  = None
 
-    def as_dict(self): return self.__dict__
-
-    def direction(self, direction):
-        self._direction = direction
+    def set_direction(self, direction):
+        self.direction = direction
         return self
 
-    def read_write(self, read_write):
-        self._read_write = read_write
+    def set_read_write(self, read_write):
+        self.read_write = read_write
         return self
 
-    def attribute(self, attribute) :
-        self._attribute = attribute
+    def set_attribute(self, attribute) :
+        self.attribute = attribute
         return self
 
     # For now payload is stored in little endian format
-    def payload(self, payload):
-        self._payload = payload
+    def set_payload(self, payload):
+        self.payload = payload
         return self
 
     def _calc_checksum(self):
         checksum = 0
-        checksum += self._direction
-        checksum += self._read_write
-        checksum += self._attribute
+        checksum += self.direction
+        checksum += self.read_write
+        checksum += self.attribute
 
+        # NOTE: python2x and python3x does not have compliant byte literals
         try:
-          for byte in self._payload:
+          for byte in self.payload:
               byte_val = struct.unpack('>B', byte)[0]
               checksum += byte_val
         except:
-          for byte_val in self._payload:
+          for byte_val in self.payload:
               checksum += byte_val
 
-        checksum += len(self._payload) + 2
+        checksum += len(self.payload) + 2
         checksum ^= 0xffff
         checksum &= 0xffff
 
         self._checksum = checksum
-
 
     def build(self):
         self._calc_checksum()
@@ -96,12 +94,12 @@ class Message:
         result = bytearray()
         result.extend(struct.pack('<H', HEADER))
         # >>>> these are single byte so we don't have to worry about byte order
-        result.append(len(self._payload) + 2)
-        result.append(self._direction)
-        result.append(self._read_write)
-        result.append(self._attribute)
+        result.append(len(self.payload) + 2)
+        result.append(self.direction)
+        result.append(self.read_write)
+        result.append(self.attribute)
         # <<<<
-        result.extend(self._payload) # TODO: store payload as big endian in class
+        result.extend(self.payload) # TODO: store payload as big endian in class
         result.extend(struct.pack('<H', self._checksum))
 
         self._raw_bytes = bytes(result)
@@ -119,11 +117,11 @@ class Message:
 
         payload    = message[payload_start:payload_end]
 
-        result = Message()          \
-            .direction(direction)   \
-            .read_write(read_write) \
-            .attribute(attribute)   \
-            .payload(payload)       \
+        result = Message()              \
+            .set_direction(direction)   \
+            .set_read_write(read_write) \
+            .set_attribute(attribute)   \
+            .set_payload(payload)       \
             .build()
 
         if message[:-2] !=  result._raw_bytes[:-2]:
@@ -131,129 +129,129 @@ class Message:
 
         return ParseStatus.OK, result
 
-battery_voltage = Message()                       \
-    .direction(Direction.MASTER_TO_BATTERY)       \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.BATTERY_VOLTAGE)         \
-    .payload(b'\x02')                             \
+battery_voltage = Message()                          \
+    .set_direction(Direction.MASTER_TO_BATTERY)      \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.BATTERY_VOLTAGE)        \
+    .set_payload(b'\x02')                            \
     .build()
 
-battery_ampere = Message()                        \
-    .direction(Direction.MASTER_TO_BATTERY)       \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.BATTERY_CURRENT)         \
-    .payload(b'\x02')                             \
+battery_ampere = Message()                           \
+    .set_direction(Direction.MASTER_TO_BATTERY)      \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.BATTERY_CURRENT)        \
+    .set_payload(b'\x02')                            \
     .build()
 
-battery_percentage = Message()                    \
-    .direction(Direction.MASTER_TO_BATTERY)       \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.BATTERY_PERCENT)         \
-    .payload(b'\x02')                             \
+battery_percentage = Message()                       \
+    .set_direction(Direction.MASTER_TO_BATTERY)      \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.BATTERY_PERCENT)        \
+    .set_payload(b'\x02')                            \
     .build()
 
-battery_cell_voltages = Message()                 \
-    .direction(Direction.MASTER_TO_BATTERY)       \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.BATTERY_CELL_VOLTAGES)   \
-    .payload(b'\x1B')                             \
+battery_cell_voltages = Message()                    \
+    .set_direction(Direction.MASTER_TO_BATTERY)      \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.BATTERY_CELL_VOLTAGES)  \
+    .set_payload(b'\x1B')                            \
     .build()
 
-trip_distance = Message()                \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.TRIP_DISTANCE)  \
-    .payload(b'\x02')                             \
+trip_distance = Message()                            \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.TRIP_DISTANCE)          \
+    .set_payload(b'\x02')                            \
     .build()
 
-distance_left = Message()                         \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.DISTANCE_LEFT)           \
-    .payload(b'\x02')                             \
+distance_left = Message()                            \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.DISTANCE_LEFT)          \
+    .set_payload(b'\x02')                            \
     .build()
 
-speed = Message()                                 \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.SPEED)                   \
-    .payload(b'\x02')                             \
+speed = Message()                                    \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.SPEED)                  \
+    .set_payload(b'\x02')                            \
     .build()
 
-tail_light_status = Message()                     \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.TAIL_LIGHT)              \
-    .payload(b'\x02')                             \
+tail_light_status = Message()                        \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.TAIL_LIGHT)             \
+    .set_payload(b'\x02')                            \
     .build()
 
-turn_on_tail_light = Message()                    \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.WRITE)                  \
-    .attribute(Attribute.TAIL_LIGHT)              \
-    .payload(b'\x02\x00')                         \
+turn_on_tail_light = Message()                       \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.WRITE)                 \
+    .set_attribute(Attribute.TAIL_LIGHT)             \
+    .set_payload(b'\x02\x00')                        \
     .build()
 
-turn_off_tail_light = Message()                   \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.WRITE)                  \
-    .attribute(Attribute.TAIL_LIGHT)              \
-    .payload(b'\x00\x00')                         \
+turn_off_tail_light = Message()                      \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.WRITE)                 \
+    .set_attribute(Attribute.TAIL_LIGHT)             \
+    .set_payload(b'\x00\x00')                        \
     .build()
 
-cruise_status = Message()                         \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.CRUISE)                  \
-    .payload(b'\x02')                             \
+cruise_status = Message()                            \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.CRUISE)                 \
+    .set_payload(b'\x02')                            \
     .build()
 
-turn_on_cruise = Message()                        \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.WRITE)                  \
-    .attribute(Attribute.CRUISE)                  \
-    .payload(b'\x01\x00')                         \
+turn_on_cruise = Message()                           \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.WRITE)                 \
+    .set_attribute(Attribute.CRUISE)                 \
+    .set_payload(b'\x01\x00')                        \
     .build()
 
-turn_off_cruise = Message()                       \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.WRITE)                  \
-    .attribute(Attribute.CRUISE)                  \
-    .payload(b'\x00\x00')                         \
+turn_off_cruise = Message()                          \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.WRITE)                 \
+    .set_attribute(Attribute.CRUISE)                 \
+    .set_payload(b'\x00\x00')                        \
     .build()
 
-general_info = Message()                          \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.GENERAL_INFO)            \
-    .payload(b'\x16')                             \
+general_info = Message()                             \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.GENERAL_INFO)           \
+    .set_payload(b'\x16')                            \
     .build()
 
-trip_info = Message()                             \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.TRIP_INFO)               \
-    .payload(b'\x0A')                             \
+trip_info = Message()                                \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.TRIP_INFO)              \
+    .set_payload(b'\x0A')                            \
     .build()
 
-motor_info = Message()                            \
-    .direction(Direction.MASTER_TO_MOTOR)         \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.MOTOR_INFO)              \
-    .payload(b'\x20')                             \
+motor_info = Message()                               \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.MOTOR_INFO)             \
+    .set_payload(b'\x20')                            \
     .build()
 
-battery_info = Message()                          \
-    .direction(Direction.MASTER_TO_BATTERY)       \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.BATTERY_INFO)            \
-    .payload(b'\x0A')                             \
+battery_info = Message()                             \
+    .set_direction(Direction.MASTER_TO_BATTERY)      \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.BATTERY_INFO)           \
+    .set_payload(b'\x0A')                            \
     .build()
 
-supplementary = Message()                         \
-    .direction(Direction.MASTER_TO_BATTERY)       \
-    .read_write(ReadWrite.READ)                   \
-    .attribute(Attribute.SUPPLEMENTARY)           \
-    .payload(b'\x06')                             \
+supplementary = Message()                            \
+    .set_direction(Direction.MASTER_TO_BATTERY)      \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.SUPPLEMENTARY)          \
+    .set_payload(b'\x06')                            \
     .build()
 
