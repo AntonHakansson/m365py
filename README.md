@@ -1,6 +1,6 @@
 # m365py [![][img_license]](#license) [![][img_loc]][loc] [![Build status](https://ci.appveyor.com/api/projects/status/ylk3eiuu65t028kv?svg=true)](https://ci.appveyor.com/project/AntonHakansson/m365py)
 [img_license]: https://img.shields.io/badge/License-MIT-blue.svg
-[img_loc]: https://tokei.rs/b1/github/AntonHakansson/rbreakout
+[img_loc]: https://tokei.rs/b1/github/AntonHakansson/m365py
 [loc]: https://github.com/Aaronepower/tokei
 
 A Python2.7 and Python3.x library to receive parsed BLE Xiaomi M365 scooter messages using [bluepy](https://github.com/IanHarvey/bluepy).
