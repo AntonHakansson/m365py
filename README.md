@@ -3,7 +3,7 @@
 [img_loc]: https://tokei.rs/b1/github/AntonHakansson/rbreakout
 [loc]: https://github.com/Aaronepower/tokei
 
-A Python2.7 and Python3x library to receive parsed BLE Xiaomi M365 scooter(Version=V1.3.8) messages using bluepy.
+A Python2.7 and Python3x library to receive parsed BLE Xiaomi M365 scooter(Version=V1.3.8) messages using [bluepy](https://github.com/IanHarvey/bluepy).
 
 ## Installation using pip
 ```console
