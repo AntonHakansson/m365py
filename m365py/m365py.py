@@ -148,14 +148,14 @@ class M365Delegate(DefaultDelegate):
         # Convert raw bytes to corresponing type
         try_update_field(result, 'serial',                lambda x: x.decode('utf-8'))
         try_update_field(result, 'pin',                   lambda x: x.decode('utf-8'))
-        try_update_field(result, 'speed_kmh',             lambda x: x / 100)  # km/h
-        try_update_field(result, 'speed_average_kmh',     lambda x: x / 100)  # km/h
-        try_update_field(result, 'distance_left_km',      lambda x: x / 100)  # km
-        try_update_field(result, 'frame_temperature',     lambda x: x / 10)   # C
-        try_update_field(result, 'odometer_km',           lambda x: x / 1000) # km
-        try_update_field(result, 'battery_capacity',      lambda x: x / 1000) # Ah
-        try_update_field(result, 'battery_current',       lambda x: x / 100)  # A
-        try_update_field(result, 'battery_voltage',       lambda x: x / 100)  # V
+        try_update_field(result, 'speed_kmh',             lambda x: float(x)/ 100)  # km/h
+        try_update_field(result, 'speed_average_kmh',     lambda x: float(x)/ 100)  # km/h
+        try_update_field(result, 'distance_left_km',      lambda x: float(x)/ 100)  # km
+        try_update_field(result, 'frame_temperature',     lambda x: float(x)/ 10)   # C
+        try_update_field(result, 'odometer_km',           lambda x: float(x)/ 1000) # km
+        try_update_field(result, 'battery_capacity',      lambda x: float(x)/ 1000) # Ah
+        try_update_field(result, 'battery_current',       lambda x: float(x)/ 100)  # A
+        try_update_field(result, 'battery_voltage',       lambda x: float(x)/ 100)  # V
         try_update_field(result, 'battery_temperature_1', lambda x: x - 20)   # C
         try_update_field(result, 'battery_temperature_2', lambda x: x - 20)   # C
         try_update_field(result, 'is_tail_light_on',      lambda x: x == 0x02)   # bool
@@ -204,6 +204,9 @@ class M365Delegate(DefaultDelegate):
                 if parse_status == ParseStatus.OK:
                     self.handle_message(message)
                     del self.disjointed_messages[i]
+
+        elif parse_status == ParseStatus.INVALID_CHECKSUM:
+            log.warning('Received packet with invalid checksum')
 
 
 class M365(Peripheral):
