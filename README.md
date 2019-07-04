@@ -3,10 +3,12 @@
 [img_loc]: https://tokei.rs/b1/github/AntonHakansson/rbreakout
 [loc]: https://github.com/Aaronepower/tokei
 
-A Python2.7 and Python3x library to receive parsed BLE Xiaomi M365 scooter(Version=V1.3.8) messages using [bluepy](https://github.com/IanHarvey/bluepy).
+A Python2.7 and Python3.x library to receive parsed BLE Xiaomi M365 scooter messages using [bluepy](https://github.com/IanHarvey/bluepy).
+
+This library is targeted for support for Xiaomi M365 firmware version `V1.3.8` - other versions may not work as intended.
 
 ## Installation using pip
-```console
+```sh
 pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
 ```
 
@@ -48,10 +50,10 @@ scooter.disconnect()
 
 ## Find MAC address for scooter
 
-This package includes the option to scan and list nearby m365 Scooters.
+This package includes the option to scan and list nearby M365 Scooters.
 Simple excecute the package as such:
 
-```console
+```sh
 sudo python -m m365py
 ```
 
