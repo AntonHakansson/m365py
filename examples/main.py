@@ -24,6 +24,13 @@ received_within_timeout = scooter.waitForNotifications(2.0)
 scooter.request(m365message.turn_off_tail_light)
 received_within_timeout = scooter.waitForNotifications(2.0)
 
+# turn on cruise mode
+scooter.request(m365message.turn_on_cruise)
+# fetch value to confirm that the scooter cruise mode has been enabled
+scooter.request(m365message.cruise_status)
+# reset cruise mode
+scooter.request(m365message.turn_off_cruise)
+
 update_interval_s = 5.0
 while True:
     start_time = time.time()

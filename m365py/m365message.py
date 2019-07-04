@@ -208,6 +208,20 @@ cruise_status = Message()                         \
     .payload(b'\x02')                             \
     .build()
 
+turn_on_cruise = Message()                        \
+    .direction(Direction.MASTER_TO_MOTOR)         \
+    .read_write(ReadWrite.WRITE)                  \
+    .attribute(Attribute.CRUISE)                  \
+    .payload(b'\x01\x00')                         \
+    .build()
+
+turn_off_cruise = Message()                       \
+    .direction(Direction.MASTER_TO_MOTOR)         \
+    .read_write(ReadWrite.WRITE)                  \
+    .attribute(Attribute.CRUISE)                  \
+    .payload(b'\x00\x00')                         \
+    .build()
+
 general_info = Message()                          \
     .direction(Direction.MASTER_TO_MOTOR)         \
     .read_write(ReadWrite.READ)                   \
