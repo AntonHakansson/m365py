@@ -1,12 +1,14 @@
 # m365py [![][img_license]](#license) [![][img_loc]][loc] [![Build status](https://ci.appveyor.com/api/projects/status/ylk3eiuu65t028kv?svg=true)](https://ci.appveyor.com/project/AntonHakansson/m365py)
-[img_license]: https://img.shields.io/badge/License-MIT_or_Apache_2.0-blue.svg
-[img_loc]: https://tokei.rs/b1/github/AntonHakansson/rbreakout
+[img_license]: https://img.shields.io/badge/License-MIT-blue.svg
+[img_loc]: https://tokei.rs/b1/github/AntonHakansson/m365py
 [loc]: https://github.com/Aaronepower/tokei
 
-A Python2.7 and Python3x library to receive parsed BLE Xiaomi M365 scooter(Version=V1.3.8) messages using [bluepy](https://github.com/IanHarvey/bluepy).
+A Python2.7 and Python3.x library to receive parsed BLE Xiaomi M365 scooter messages using [bluepy](https://github.com/IanHarvey/bluepy).
+
+This library is targeted for support for Xiaomi M365 firmware version `V1.3.8` - other versions may not work as intended.
 
 ## Installation using pip
-```console
+```sh
 pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
 ```
 
@@ -48,10 +50,34 @@ scooter.disconnect()
 
 ## Find MAC address for scooter
 
-This package includes the option to scan and list nearby m365 Scooters.
+This package includes the option to scan and list nearby M365 Scooters.
 Simple excecute the package as such:
 
-```console
+```sh
 sudo python -m m365py
 ```
 
+## Licence
+```
+MIT License
+
+Copyright (c) [year] [fullname]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
