@@ -51,7 +51,7 @@ scooter.disconnect()
 ## Find MAC address for scooter
 
 This package includes the option to scan and list nearby M365 Scooters.
-Simple excecute the package as such:
+Simply excecute the package as such:
 
 ```sh
 sudo python -m m365py
