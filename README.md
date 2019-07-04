@@ -6,7 +6,7 @@
 A Python2.7 and Python3x library to receive parsed BLE Xiaomi M365 scooter(Version=V1.3.8) messages using bluepy.
 
 ## Installation using pip
-```bash
+```console
 pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
 ```
 
@@ -51,7 +51,7 @@ scooter.disconnect()
 This package includes the option to scan and list nearby m365 Scooters.
 Simple excecute the package as such:
 
-```bash
+```console
 sudo python -m m365py
 ```
 
