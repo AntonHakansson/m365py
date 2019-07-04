@@ -75,12 +75,14 @@ class Message:
 
         # NOTE: python2x and python3x does not have compliant byte literals
         try:
-          for byte in self.payload:
-              byte_val = struct.unpack('>B', byte)[0]
-              checksum += byte_val
+            # python 2.7
+            for byte in self.payload:
+                byte_val = struct.unpack('>B', byte)[0]
+                checksum += byte_val
         except:
-          for byte_val in self.payload:
-              checksum += byte_val
+            # python 3.x
+            for byte_val in self.payload:
+                checksum += byte_val
 
         checksum += len(self.payload) + 2
         checksum ^= 0xffff
