@@ -40,6 +40,13 @@ scooter.request(m365message.cruise_status)
 # reset cruise mode
 scooter.request(m365message.turn_off_cruise)
 
+# turn on lock
+scooter.request(m365message.turn_on_lock)
+# fetch value to confirm that the scooter is locked
+scooter.request(m365message.lock_status)
+# turn off cruise mode
+scooter.request(m365message.turn_off_lock)
+
 update_interval_s = 5.0
 while True:
     start_time = time.time()

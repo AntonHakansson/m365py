@@ -65,6 +65,12 @@ class M365Delegate(DefaultDelegate):
                 struct.unpack('<H', message.payload)
             )
 
+        elif message.attribute == Attribute.GET_LOCK:
+            result = M365Delegate.unpack_to_dict(
+                'is_lock_on',
+                struct.unpack('<H', message.payload)
+            )
+
         elif message.attribute == Attribute.BATTERY_INFO:
             result = M365Delegate.unpack_to_dict(
                 'battery_capacity battery_percent battery_current battery_voltage battery_temperature_1 battery_temperature_2',
@@ -154,6 +160,7 @@ class M365Delegate(DefaultDelegate):
         try_update_field(result, 'battery_temperature_1', lambda x: x - 20)   # C
         try_update_field(result, 'battery_temperature_2', lambda x: x - 20)   # C
         try_update_field(result, 'is_tail_light_on',      lambda x: x == 0x02)   # bool
+        try_update_field(result, 'is_lock_on',            lambda x: x == 0x02)   # bool
         try_update_field(result, 'is_cruise_on',          lambda x: x == 0x01)   # bool
 
         if 'version' in result:

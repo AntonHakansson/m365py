@@ -31,7 +31,11 @@ class Attribute():
     CRUISE                 = 0x7C
     TAIL_LIGHT             = 0x7D
     MOTOR_INFO             = 0xB0 # error warning flags workmode battery_percent speed_kmh speed_average_kmh odometer_km trip_distance_m uptime_s frame_temperature
+    GET_LOCK               = 0xB2
+    SET_LOCK               = 0x70
+    UNSET_LOCK             = 0x71
     SUPPLEMENTARY          = 0x7B # kers_mode, cruisemode, taillight
+    # TODO: Setting kers mode
 
 class ParseStatus:
     OK               = 'ok'
@@ -222,11 +226,39 @@ turn_off_cruise = Message()                          \
     .set_payload(b'\x00\x00')                        \
     .build()
 
+turn_on_lock = Message()                             \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.WRITE)                 \
+    .set_attribute(Attribute.SET_LOCK)               \
+    .set_payload(b'\x01\x00')                        \
+    .build()
+
+turn_off_lock = Message()                            \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.WRITE)                 \
+    .set_attribute(Attribute.UNSET_LOCK)             \
+    .set_payload(b'\x01\x00')                        \
+    .build()
+
+lock_status = Message()                              \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.GET_LOCK)               \
+    .set_payload(b'\x02')                            \
+    .build()
+
 general_info = Message()                             \
     .set_direction(Direction.MASTER_TO_MOTOR)        \
     .set_read_write(ReadWrite.READ)                  \
     .set_attribute(Attribute.GENERAL_INFO)           \
     .set_payload(b'\x16')                            \
+    .build()
+
+general_info_extended = Message()                    \
+    .set_direction(Direction.MASTER_TO_MOTOR)        \
+    .set_read_write(ReadWrite.READ)                  \
+    .set_attribute(Attribute.GENERAL_INFO)           \
+    .set_payload(b'\x22')                            \
     .build()
 
 trip_info = Message()                                \
