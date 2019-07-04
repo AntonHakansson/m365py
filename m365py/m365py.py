@@ -158,7 +158,7 @@ class M365Delegate(DefaultDelegate):
 
         if 'version' in result:
             result['version'] = '{:02x}'.format(result['version'])
-            result['version'] = 'V' + result['version'][0] + '.' + result['version'][1] + '.' + result['version'][2]
+            result['version'] = 'V' + '.'.join(result['version'])  # V1.3.8
 
         # write result to m365 cached state
         for key, value in result.items():
