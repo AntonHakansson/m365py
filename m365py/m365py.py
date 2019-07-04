@@ -119,7 +119,6 @@ class M365Delegate(DefaultDelegate):
         elif message._attribute == Attribute.BATTERY_CELL_VOLTAGES:
             #          [cell1 ][cell2 ]                     ...                                [cell10][           ???            ]
             # payload: /x2d/x10/x2e/x10/x1d/x10/x2f/x10/x34/x10/x34/x10/x3a/x10/x3a/x10/x2e/x10/x2f/x10/x00/x00/x00/x00/x00/x00/x00
-            print(phex(message._payload))
             cell_voltages_tuple = struct.unpack('<HHHHHHHHHHxxxxxxx', message._payload)
 
             result['cell_voltages'] = []
