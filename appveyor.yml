@@ -1,0 +1,14 @@
+version: 1.0.{build}
+image: Ubuntu
+install:
+- sh: >-
+    sudo apt-get install libglib2.0-dev -y
+
+    sudo pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
+build_script:
+- sh: >-
+    python --version
+
+    python -m py_compile m365py/m365py.py m365py/m365message.py
+
+    python -m py_compile examples/main.py
