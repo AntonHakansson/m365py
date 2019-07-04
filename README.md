@@ -25,9 +25,9 @@ from m365py import m365message
 
 # callback for received messages from scooter
 def handle_message(m365_peripheral, m365_message, value):
-    print('{} => {}'.format(m365_message._attribute, json.dumps(value, indent=4)))
+    print(json.dumps(value, indent=4))
     # Will print:
-    # Attribute.MOTOR_INFO => {
+    # {
     #   "battery_percent": 84,
     #   "speed_kmh": 0.0,
     #   "speed_average_kmh": 0.0,
