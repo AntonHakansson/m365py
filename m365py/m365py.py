@@ -125,7 +125,7 @@ class M365Delegate(DefaultDelegate):
             result['cell_voltages'] = []
 
             for voltage in cell_voltages_tuple:
-                result['cell_voltages'].append(voltage / 100) # V
+                result['cell_voltages'].append(float(voltage) / 100) # V
 
         elif message._attribute == Attribute.SUPPLEMENTARY:
             # TODO:  Proper states for kers mode instead of byte value
