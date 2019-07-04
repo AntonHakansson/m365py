@@ -4,7 +4,7 @@ setup(
     name='m365py',
     url='https://github.com/AntonHakansson/m365py',
     author='Anton Håkansson',
-    author_email='anton.hakansson98@@gmail.com',
+    author_email='anton.hakansson98@gmail.com',
     packages=['m365py'],
     install_requires=['bluepy'],
     version='0.1',
