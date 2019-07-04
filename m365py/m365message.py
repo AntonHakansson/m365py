@@ -75,8 +75,14 @@ class Message:
         checksum += self._read_write
         checksum += self._attribute
 
-        for byte in self._payload:
-            checksum += struct.unpack('>B', byte)[0]
+        try:
+          for byte in self._payload:
+              byte_val = struct.unpack('>B', byte)[0]
+              checksum += byte_val
+        except:
+          for byte_val in self._payload:
+              checksum += byte_val
+
         checksum += len(self._payload) + 2
         checksum ^= 0xffff
         checksum &= 0xffff
