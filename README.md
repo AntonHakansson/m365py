@@ -7,6 +7,10 @@ A Python2.7 and Python3.x library to receive parsed BLE Xiaomi M365 scooter mess
 
 This library is targeted for support for Xiaomi M365 firmware version `V1.3.8` - other versions may not work as intended, confirmed to not work on `V1.5.x`.
 
+The protocol was derived with the help of the following resources:
+ - [Camilo Ruiz (@CamiAlfa at github.com)](https://github.com/CamiAlfa/M365-BLE-PROTOCOL/blob/master/protocolo)
+ - [smartinick](https://github.com/smartinick/esp32_xiaomi_m365/blob/9a9fcfdcd4f577b4aeaa050f5102ef0c53a24290/esp32_m365_oled/src/m365client.h#L381)
+
 ## Installation using pip
 ```sh
 pip install git+https://github.com/AntonHakansson/m365py.git#egg=m365py
