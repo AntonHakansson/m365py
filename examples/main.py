@@ -20,9 +20,17 @@ def handle_message(m365_peripheral, m365_message, value):
         if value['kers_mode'] == m365py.KersMode.WEAK:
             print('kers set to weak')
 
+def connected(m365_peripheral):
+    print('Scooter Connected')
+
+def disconnected(m365_peripheral):
+    print('Scooter Disconnected')
+
 
 scooter_mac_address = 'D6:0E:DB:7B:EA:AB'
 scooter = m365py.M365(scooter_mac_address, handle_message)
+scooter.set_connected_callback(connected)
+scooter.set_disconnected_callback(disconnected)
 scooter.connect()
 
 # Make tail light blink in a blocking fashion, timeout = 2.0

@@ -221,12 +221,20 @@ class M365(Peripheral):
 
         self.cached_state = {}
         self._callback = callback
+        self._disconnected_callback = None
+        self._connected_callback = None
 
         stream_handler = logging.StreamHandler()
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         stream_handler.setFormatter(formatter)
 
         log.addHandler(stream_handler)
+
+    def set_connected_callback(self, cb):
+        self._connected_callback = cb
+
+    def set_disconnected_callback(self, cb):
+        self._disconnected_callback = cb
 
     @staticmethod
     def _find_characteristic(uuid, chars):
@@ -243,6 +251,11 @@ class M365(Peripheral):
             try:
                 Peripheral.connect(self, self.mac_address, addrType=ADDR_TYPE_RANDOM)
                 log.info('Successfully connected to Scooter: ' + self.mac_address)
+                if self._connected_callback:
+                    self._connected_callback(self)
+
+                # Attach delegate
+                self.withDelegate(M365Delegate(self))
 
                 # Turn on notifications, otherwise there won't be any notification
                 self.writeCharacteristic(0xc,  b'\x01\x00', True)
@@ -256,17 +269,20 @@ class M365(Peripheral):
             except Exception as e:
                 if self._auto_reconnect == True:
                     log.warning('{}, retrying'.format(e))
-                    self._try_reconnect()
                 else:
                     raise e
 
     def _try_reconnect(self):
-        self.disconnect()
+        try:
+            self.disconnect()
+        except:
+            pass
+        if self._disconnected_callback:
+            self._disconnected_callback(self)
         self._try_connect()
 
     def connect(self):
         self._try_connect()
-        self.withDelegate(M365Delegate(self))
 
     def request(self, message):
         while True:
